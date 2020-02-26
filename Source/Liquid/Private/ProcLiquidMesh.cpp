@@ -74,7 +74,7 @@ void AProcLiquidMesh::AddTangent(FProcMeshTangent tangent)
 void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
 {
 	float angleBetweenPointsRads = (360 / Resolution) * PI / 180;
-	UE_LOG(LogTemp, Warning, TEXT("Angle between point in rads is = %f"), angleBetweenPointsRads);
+	//UE_LOG(LogTemp, Warning, TEXT("Angle between point in rads is = %f"), angleBetweenPointsRads);
 	float currentAngleRads = 0;
 	FVector2D UVCenter = FVector2D(0, 0);
 	vertexIndex = 0; // resetting VertexIndex
@@ -86,8 +86,8 @@ void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
 		float Y = Radius * cos(currentAngleRads);
 		float Z = Radius * sin(currentAngleRads);
 		AddVertex(Y, Z);
-		UE_LOG(LogTemp, Warning, TEXT("Added vertex of num %f with coords: Y: %f, Z: %f"), i, Y, Z);
-		UE_LOG(LogTemp, Warning, TEXT("using currentAngleRads = %f"), currentAngleRads);
+		//UE_LOG(LogTemp, Warning, TEXT("Added vertex of num %f with coords: Y: %f, Z: %f"), i, Y, Z);
+		//UE_LOG(LogTemp, Warning, TEXT("using currentAngleRads = %f"), currentAngleRads);
 		vertexIndex++;
 
 		float U = 1 * cos(currentAngleRads);
@@ -120,6 +120,11 @@ FVector AProcLiquidMesh::GetVertexByID(int32 ID)
 	}
 }
 
+int32 AProcLiquidMesh::GetVertexNum()
+{
+	return vertexIndex;
+}
+
 void AProcLiquidMesh::GenerateMesh()
 {
 	Verticies.Reset();
@@ -129,30 +134,9 @@ void AProcLiquidMesh::GenerateMesh()
 	Triangles.Reset();
 	Colors.Reset();
 
-	//vertexIndex = 0;
-	//
-	//AddVertex(0, 10);
-	//AddVertex(vertexIndex, 10, 0);
-	//AddVertex(vertexIndex, 0, 0);
-	//
-	//
-	//AddTriangle(vertexIndex - 2, vertexIndex - 1, vertexIndex);
-
 	AddCircle(MeshCenter, 100, 30);
 
-	UE_LOG(LogTemp, Warning, TEXT("vertexIndex (max) = %i"), vertexIndex);
-	
-	//for (int i = 0; i < 3; i++) 
-	//{
-	//	FVector ThisNormal = FVector::CrossProduct(GetVertexByID(0), GetVertexByID(1)).GetSafeNormal();
-	//	AddNormal(ThisNormal);
-	//	AddTangent(FProcMeshTangent(0, 1, 0));
-	//	AddVertexColor(FColor::Green);
-	//}
-	//
-	//AddUV(0, 1);
-	//AddUV(1, 0);
-	//AddUV(0, 0);
+	//UE_LOG(LogTemp, Warning, TEXT("vertexIndex (max) = %i"), vertexIndex);
 
 	mesh->CreateMeshSection(0, Verticies, Triangles, Normals, UVs, Colors, Tangents, false); 
 	mesh->bUseAsyncCooking = true;

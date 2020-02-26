@@ -4,22 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "D:\UEprojects\06_Liquid\Liquid\Source\Liquid\Public\ProcLiquidMesh.h"
-#include "MyPlayer.generated.h"
-
-
+#include "MyActorTest.generated.h"
 
 UCLASS()
-class LIQUID_API AMyPlayer : public AActor
+class LIQUID_API AMyActorTest : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AMyPlayer();
+	AMyActorTest();
 
 	UPROPERTY(EditAnywhere)
-		AProcLiquidMesh* ProcLiquidMesh;
+		AActor* SelectActor;
 
 protected:
 	// Called when the game starts or when spawned
