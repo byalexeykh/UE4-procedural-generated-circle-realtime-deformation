@@ -64,8 +64,8 @@ void AMyPlayerController::BeginPlay()
 	InputComponent->BindAxis("MouseX", this, &AMyPlayerController::MoveX); // When move mouse in X axis
 	InputComponent->BindAxis("MouseY", this, &AMyPlayerController::MoveY); // When move mouse in Y axis
 
-	UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints);
-	UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints);
+	UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints2);
+	UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints2);
 
 	GenerateTaskShape();
 }
@@ -139,8 +139,6 @@ void AMyPlayerController::SetInteractState()
 
 void AMyPlayerController::Stop()
 {
-	
-	
 	Interactable = false;
 	ProceduralLiquidMesh->Error = false;
 	
@@ -150,22 +148,8 @@ void AMyPlayerController::Stop()
 	
 	for (auto& elem : SplinePointsMap) 
 	{
-		if (FVector::Distance(ProcMeshBase->Spline->FindLocationClosestToWorldLocation(elem.Value, ESplineCoordinateSpace::World), elem.Value) > MaxDeviationFromTaskShape) 
+		if (FVector::Distance(ProcMeshBase->Spline->FindLocationClosestToWorldLocation(elem.Value, ESplineCoordinateSpace::World), elem.Value) < MaxDeviationFromTaskShape) 
 		{
-			IncorrectPoints++;
-			UE_LOG(LogTemp, Warning, TEXT("IncorrectPoints++: %i"), IncorrectPoints);
-			DrawDebugSphere(
-				GetWorld(),
-				elem.Value,
-				6,
-				10,
-				FColor::Red,
-				false,
-				10.f,
-				0
-			);
-		}
-		else {
 			DrawDebugSphere(
 				GetWorld(),
 				elem.Value,
@@ -176,26 +160,51 @@ void AMyPlayerController::Stop()
 				10.f,
 				0
 			);
+		}
+		else if (elem.Value == FVector::ZeroVector) {
+			DrawDebugSphere(
+				GetWorld(),
+				elem.Value,
+				6,
+				10,
+				FColor::Yellow,
+				false,
+				10.f,
+				0
+			);
+		}
+		else {
+			IncorrectPoints2++;
+			DrawDebugSphere(
+				GetWorld(),
+				elem.Value,
+				6,
+				10,
+				FColor::Red,
+				false,
+				10.f,
+				0
+			);
 			
 		}
 
 		elem.Value = FVector::ZeroVector;
 	}
 
-	if (IncorrectPoints < MaxIncorrectPoints)
+	if (IncorrectPoints2 < MaxIncorrectPoints2)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("OnCorrectShapeDrawed()"));
 		OnCorrectShapeDrawed();
 	}
 	else 
 	{
-		MaxIncorrectPoints = 10;
 		// выводить на экран корректные и некорректные точки
-		UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints);
-		UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints);
+		UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints2);
+		UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints2);
 		UE_LOG(LogTemp, Warning, TEXT("OnIncorrectShapeDrawed()"));
 		OnIncorrectShapeDrawed();
 	}
+
 
 	for (auto& elem : PosedVerticies) {
 		elem.Value = false;
@@ -209,6 +218,7 @@ void AMyPlayerController::Stop()
 		elem.Value = 0;
 	}
 	
+	IncorrectPoints2 = 0;
 	CurrentSplinePoint = 0;
 	ProceduralLiquidMesh->Spline->ClearSplinePoints(true);
 
@@ -248,7 +258,6 @@ void AMyPlayerController::DrawSpline(FVector hitResult)
 {
 	if (CurrentSplinePoint == 0) {
 		SplinePointsMap.Emplace(0, hitResult);
-		SplinePoints.Add(hitResult);
 		ProceduralLiquidMesh->Spline->AddSplinePoint(FVector(0, hitResult.Y, hitResult.Z), ESplineCoordinateSpace::World, true);
 		
 		DrawDebugSphere(

@@ -53,12 +53,12 @@ private:
 
 	
 	int32 CurrentSplinePoint = 0;
+	int32 MaxIncorrectPoints2 = 10;
+	int32 IncorrectPoints2 = 0;
 
 	float SelectRadius = 10;
 	float DistanceBetweenPoints = 30;
 	float MaxDeviationFromTaskShape = 10;
-	float MaxIncorrectPoints = 10;
-	float IncorrectPoints = 0;
 
 	float Distance;
 	float SmallestDistance;
