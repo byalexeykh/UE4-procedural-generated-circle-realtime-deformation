@@ -3,6 +3,9 @@
 
 #include "ProcLiquidMesh.h"
 #include "..\Public\ProcLiquidMesh.h"
+#include "Components/SplineComponent.h"
+#include "DrawDebugHelpers.h"
+
 
 // Sets default values
 AProcLiquidMesh::AProcLiquidMesh()
@@ -15,6 +18,9 @@ AProcLiquidMesh::AProcLiquidMesh()
 
 	mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
 	mesh->SetupAttachment(RootComponent);
+
+	Spline = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
+	Spline->bDrawDebug = true;
 }
 
 void AProcLiquidMesh::PostLoad()
@@ -81,7 +87,7 @@ void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
 	Verticies.Add(Center); // Adding Center first (Verticies[vertexIndex] = Verticies[0] = Center)
 	UVs.Add(UVCenter);
 
-	for (int i = 0; i <= Resolution; i++) 
+	for (int i = 0; i < Resolution; i++) 
 	{
 		float Y = Radius * cos(currentAngleRads);
 		float Z = Radius * sin(currentAngleRads);
@@ -93,6 +99,7 @@ void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
 		float U = 1 * cos(currentAngleRads);
 		float V = 1 * sin(currentAngleRads);
 		AddUV(U, V);
+		VerticiesDir.Add(FVector(0, U, V));
 
 		FVector ThisNormal = FVector::CrossProduct(GetVertexByID(0), GetVertexByID(i)).GetSafeNormal();
 		AddNormal(ThisNormal);
@@ -102,11 +109,12 @@ void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
 		currentAngleRads += angleBetweenPointsRads;
 	}
 
-	for (int i = 1; i <= Resolution; i++) 
+	for (int i = 1; i < Resolution; i++)
 	{
 		AddTriangle(0, i + 1, i); //рассчитать vertexIndex для алгоритма добавления треугольников
 	}
 
+	AddTriangle(0, 1, Resolution);
 }
 
 FVector AProcLiquidMesh::GetVertexByID(int32 ID)
@@ -115,14 +123,9 @@ FVector AProcLiquidMesh::GetVertexByID(int32 ID)
 	if (ID <= c)
 		return Verticies[ID];
 	else {
-		UE_LOG(LogTemp, Error, TEXT("ERROR: provided VertexID is out of bounds of Verticies array! Returninig Zero-Vector... (Verticies.Num: %i | Provided ID: %i)"), c, ID);
+		UE_LOG(LogTemp, Error, TEXT("provided VertexID is out of bounds of Verticies array! Returninig Zero-Vector... (Verticies.Num: %i | Provided ID: %i)"), c, ID);
 		return FVector(0, 0, 0);
 	}
-}
-
-int32 AProcLiquidMesh::GetVertexNum()
-{
-	return vertexIndex;
 }
 
 void AProcLiquidMesh::GenerateMesh()
@@ -136,28 +139,35 @@ void AProcLiquidMesh::GenerateMesh()
 
 	AddCircle(MeshCenter, 100, 30);
 
+	VerticiesDefaultPos.Append(Verticies); // Backup'ing verticies coords
+
 	//UE_LOG(LogTemp, Warning, TEXT("vertexIndex (max) = %i"), vertexIndex);
 
-	mesh->CreateMeshSection(0, Verticies, Triangles, Normals, UVs, Colors, Tangents, false); 
+	mesh->CreateMeshSection(0, Verticies, Triangles, Normals, UVs, Colors, Tangents, true); 
 	mesh->bUseAsyncCooking = true;
 }
 
-
-
-
-
-// Called when the game starts or when spawned
-void AProcLiquidMesh::BeginPlay()
+void AProcLiquidMesh::UpdateMesh()
 {
-	Super::BeginPlay();
-	
+	mesh->UpdateMeshSection(0, Verticies, Normals, UVs, Colors, Tangents);
 }
 
-// Called every frame
-void AProcLiquidMesh::Tick(float DeltaTime)
+void AProcLiquidMesh::AddPointToSpline(FVector NewPointLoc)
 {
-	Super::Tick(DeltaTime);
-
+	Spline->AddSplineLocalPoint(NewPointLoc);
 }
 
+int32 AProcLiquidMesh::GetVerticiesArrayLength()
+{
+	return vertexIndex;
+}
 
+void AProcLiquidMesh::ChangeVertexLoc(int32 VertexID, FVector NewLocation)
+{
+	if (VertexID <= vertexIndex)
+		Verticies[VertexID] = NewLocation;
+	else {
+		UE_LOG(LogTemp, Error, TEXT("provided VertexID (%i) is out of bound of Verticies array (%i)"), VertexID, vertexIndex);
+		Error = true;
+	}
+}

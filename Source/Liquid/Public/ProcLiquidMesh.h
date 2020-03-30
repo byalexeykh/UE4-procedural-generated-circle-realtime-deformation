@@ -7,6 +7,8 @@
 #include "ProceduralMeshComponent.h"
 #include "ProcLiquidMesh.generated.h"
 
+class USplineComponent;
+
 UCLASS()
 class LIQUID_API AProcLiquidMesh : public AActor
 {
@@ -21,7 +23,6 @@ private:
 
 	int32 TrisIndex;
 	int32 vertexIndex;
-	FVector MeshCenter = FVector(0, 0, 0);
 
 	UProceduralMeshComponent* mesh;
 
@@ -38,19 +39,34 @@ private:
 	void AddNormal(FVector normal);
 	void AddTangent(FProcMeshTangent tangent);
 	void AddCircle(FVector Center, int32 Radius, int32 Resolution);
-	FVector GetVertexByID(int32 ID);
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 public:	
-	int32 GetVertexNum();
-	void GenerateMesh();
+	USplineComponent* Spline;
 
+	void GenerateMesh();
+	void UpdateMesh();
+	void AddPointToSpline(FVector NewPointLoc);
+
+	bool Error = false;
+	
+	FVector MeshCenter = FVector(0, 0, 0);
+	
+	///Returns vertex by its ID in array
+	FVector GetVertexByID(int32 ID);
+	
+	///Returns Vertex direction relative to center
+	TArray<FVector> VerticiesDir;
+	///Current vertex location
 	TArray<FVector> Verticies;
+	///Default vertex location
+	TArray<FVector> VerticiesDefaultPos;
+	///Returns Verticies array length
+	int32 GetVerticiesArrayLength();
+
+	///Changes vertex location
+	void ChangeVertexLoc(int32 VertexID, FVector NewLocation);
 
 	// Sets default values for this actor's properties
 	AProcLiquidMesh();
