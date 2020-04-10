@@ -15,7 +15,4 @@ class LIQUID_API UGUIUserWidget : public UUserWidget
 public:
 
 private:
-	void GetController();
-
-	MyPlayerController *MyController;
 };

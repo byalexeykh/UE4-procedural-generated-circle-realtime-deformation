@@ -58,8 +58,9 @@ void AMyPlayerController::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Distance between verticies is: %f"), DistanceBetweenVerticies);
 
 	// Binding actions and axis
-
-	InputComponent->BindAction("MouseSelect", IE_Pressed, this, &AMyPlayerController::SetInteractState);
+	InputComponent->BindAction("MouseSelect", IE_Pressed, this, &AMyPlayerController::SetIntrractState);
+	InputComponent->BindAction("MouseSelect", IE_Pressed, this, &AMyPlayerController::SetIntrractState);
+	InputComponent->BindAction("MouseSelect", IE_Pressed, this, &AMyPlayerController::SetIntrractState);
 	InputComponent->BindAction("MouseSelect", IE_Released, this, &AMyPlayerController::Stop); // Stop actions
 	InputComponent->BindAxis("MouseX", this, &AMyPlayerController::MoveX); // When move mouse in X axis
 	InputComponent->BindAxis("MouseY", this, &AMyPlayerController::MoveY); // When move mouse in Y axis
@@ -67,58 +68,46 @@ void AMyPlayerController::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints2);
 	UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints2);
 
-	GenerateTaskShape();
+	Interactable = false;
+}
+
+void AMyPlayerController::SetIntrractState() 
+{
+	Interactable = true;
+	UE_LOG(LogTemp, Warning, TEXT("SETTING INTERACTABLE STATE"));
+}
+
+void AMyPlayerController::StartPlay() 
+{
+	TimerCurrent = TimerInit;
+	TimeLast = TimerCurrent;
+	TimerDecrease = 1;
+	isGameStarted = true;
+	//GenerateTaskShape();
+	OnStartPlay(); 
 }
 
 void AMyPlayerController::Tick(float DeltaTime)
 {
-	
-	if (Interactable) 
-	{
-		DeprojectMousePositionToWorld(MouseWorldPosition, MouseWorldDirection);
-		GetWorld()->LineTraceSingleByChannel(HitResult, MouseWorldPosition, MouseWorldPosition + MouseWorldDirection * 1000, ECC_Visibility, CollisionQueryParams);
-		DrawSpline(HitResult.ImpactPoint);
-
-		DrawSelectingArea();
-
-		int32 VertexIndex = 0;
-		for (FVector v : ProceduralLiquidMesh->Verticies)
-		{
-			Distance = FVector::Distance(v, HitResult.ImpactPoint); //TODO ѕеределать систему перемещени€ вертексов под управление сплайном
-			VerticiesToSelectCenterDistMap.Emplace(VertexIndex, Distance);
-
-			if (PosedVerticies.Find(VertexIndex) == nullptr) {
-				UE_LOG(LogTemp, Error, TEXT("Cant move vertex: index: %i is out of bounds of PosedVerticies (%i) map"), VertexIndex, PosedVerticies.Num() - 1);
-				DrawDebugSphere(
-					GetWorld(),
-					ProceduralLiquidMesh->Verticies[VertexIndex],
-					3,
-					3,
-					FColor::Red,
-					false,
-					10.f,
-					0
-				);
-				return;
-			}
-
-			if (Distance < SelectRadius && VertexIndex > 0)
-			{
-				SelectedVerticiesMap.Emplace(VertexIndex, true);
-			}
-			else 
-			{
-				SelectedVerticiesMap.Emplace(VertexIndex, false);
-				ProceduralLiquidMesh->Error = false;
-			}
-			
-			VertexIndex++;
+	//UE_LOG(LogTemp, Warning, TEXT("Is Interactable: %s"), Interactable ? TEXT("TRUE") : TEXT("FALSE"));
+	if (isGameStarted) {
+		TimeLast -= DeltaTime;
+		//UE_LOG(LogTemp, Warning, TEXT("Time Last: %f"), TimeLast);
+		if (TimeLast <= 0) {
+			Stop();
 		}
-		ProceduralLiquidMesh->UpdateMesh();
-	}
-	else 
-	{
-		for (int32 i = 0; i <= ProceduralLiquidMesh->GetVerticiesArrayLength(); i++)
+
+		if (Interactable) 
+		{
+			DeprojectMousePositionToWorld(MouseWorldPosition, MouseWorldDirection);
+			GetWorld()->LineTraceSingleByChannel(HitResult, MouseWorldPosition, MouseWorldPosition + MouseWorldDirection * 1000, ECC_Visibility, CollisionQueryParams);
+			DrawSpline(HitResult.ImpactPoint);
+
+			DrawSelectingArea();
+		}
+		else 
+		{
+			for (int32 i = 0; i <= ProceduralLiquidMesh->GetVerticiesArrayLength(); i++)
 		{
 			if (ProceduralLiquidMesh->Error) {
 				UE_LOG(LogTemp, Error, TEXT("Unable to update Mesh because an error occurred"));
@@ -128,101 +117,134 @@ void AMyPlayerController::Tick(float DeltaTime)
 				ProceduralLiquidMesh->UpdateMesh();
 			}
 		}
+		}
 	}
-	
-}
-
-void AMyPlayerController::SetInteractState()
-{
-	Interactable = true;
 }
 
 void AMyPlayerController::Stop()
 {
-	Interactable = false;
-	ProceduralLiquidMesh->Error = false;
-	
-	for (auto& elem : SelectedVerticiesMap) {
-		elem.Value = false;
-	}
-	
-	for (auto& elem : SplinePointsMap) 
-	{
-		if (FVector::Distance(ProcMeshBase->Spline->FindLocationClosestToWorldLocation(elem.Value, ESplineCoordinateSpace::World), elem.Value) < MaxDeviationFromTaskShape) 
+	if (isGameStarted) {
+		Interactable = false;
+		ProceduralLiquidMesh->Error = false;
+		
+		for (auto& elem : SelectedVerticiesMap) {
+			elem.Value = false;
+		}
+		
+		for (auto& elem : SplinePointsMap) //TODO ƒобавить проверку длины нарисованного сплайна, она должна составл€ть как минимум 90% от заданного дл€ засчитывани€ выигрыша
 		{
-			DrawDebugSphere(
+			float DistanceToClosestLocOnTaskShape = FVector::Distance(ProcMeshBase->Spline2->FindLocationClosestToWorldLocation(elem.Value, ESplineCoordinateSpace::World), elem.Value);
+			DrawDebugLine
+			(
 				GetWorld(),
+				ProcMeshBase->Spline2->FindLocationClosestToWorldLocation(elem.Value, ESplineCoordinateSpace::World),
 				elem.Value,
-				6,
-				10,
-				FColor::Green,
-				false,
-				10.f,
-				0
-			);
-		}
-		else if (elem.Value == FVector::ZeroVector) {
-			DrawDebugSphere(
-				GetWorld(),
-				elem.Value,
-				6,
-				10,
 				FColor::Yellow,
-				false,
+				true,
 				10.f,
-				0
+				0,
+				2
 			);
+			UE_LOG(LogTemp, Warning, TEXT("DistanceToClosestLocOnTaskShape: %f"), DistanceToClosestLocOnTaskShape);
+			float RequiredSplineLength = ProcMeshBase->Spline2->GetSplineLength();
+			float DrawedSplineLength = ProceduralLiquidMesh->Spline->GetSplineLength();
+
+			if (DistanceToClosestLocOnTaskShape < MaxDeviationFromTaskShape && DrawedSplineLength >= RequiredSplineLength * 0.7)
+			{
+				DrawDebugSphere(
+					GetWorld(),
+					elem.Value,
+					6,
+					10,
+					FColor::Green,
+					false,
+					10.f,
+					0
+				);
+			}
+			else if (elem.Value == FVector::ZeroVector) {
+				DrawDebugSphere(
+					GetWorld(),
+					elem.Value,
+					6,
+					10,
+					FColor::Yellow,
+					false,
+					10.f,
+					0
+				);
+			}
+			else {
+				IncorrectPoints2++;
+				DrawDebugSphere(
+					GetWorld(),
+					elem.Value,
+					6,
+					10,
+					FColor::Red,
+					false,
+					10.f,
+					0
+				);
+				
+			}
+
+			elem.Value = FVector::ZeroVector;
 		}
-		else {
-			IncorrectPoints2++;
-			DrawDebugSphere(
-				GetWorld(),
-				elem.Value,
-				6,
-				10,
-				FColor::Red,
-				false,
-				10.f,
-				0
-			);
-			
+
+
+		for (auto& elem : PosedVerticies) {
+			elem.Value = false;
 		}
 
-		elem.Value = FVector::ZeroVector;
-	}
+		for (auto& elem : IsSplinePointOccupied) {
+			elem.Value = false;
+		}
 
-	if (IncorrectPoints2 < MaxIncorrectPoints2)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("OnCorrectShapeDrawed()"));
-		OnCorrectShapeDrawed();
-	}
-	else 
-	{
-		// выводить на экран корректные и некорректные точки
-		UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints2);
-		UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints2);
-		UE_LOG(LogTemp, Warning, TEXT("OnIncorrectShapeDrawed()"));
-		OnIncorrectShapeDrawed();
-	}
+		for (auto& elem : VerticiesToSelectCenterDistMap) {
+			elem.Value = 0;
+		}
+		
+		// Checking is correct shape drawed
 
+		if (IncorrectPoints2 < FMath::RoundToInt(PointsPlaced * 0.1))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("OnCorrectShapeDrawed()"));
+			UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints2);
+			UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints2);
+			OnCorrectShapeDrawed();
+			CorrectShapeDrawedCombo++;
+			CorrectShapeDrawedCombo == IncorrectShapesDrawedMax ? IncorrectShapesDrawed-- : NULL;
+		}
+		else 
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Incorrect points: %i"), IncorrectPoints2);
+			UE_LOG(LogTemp, Warning, TEXT("Max incorrect points: %i"), MaxIncorrectPoints2);
+			UE_LOG(LogTemp, Warning, TEXT("OnIncorrectShapeDrawed()"));
+			OnIncorrectShapeDrawed();
+			IncorrectShapesDrawed++;
+			CorrectShapeDrawedCombo = 0;
+		}
 
-	for (auto& elem : PosedVerticies) {
-		elem.Value = false;
+		if (IncorrectShapesDrawed == IncorrectShapesDrawedMax) {
+			OnLoose();
+			isGameStarted = false;
+			IncorrectShapesDrawed = 0;
+		}
+
+		DecreaseTimerValue();
+
+		// Reseting values
+
+		OnGenerateSecondSpline(); // TODO —делать анимацию пропадани€ (либо изменение толщины линии, либо изменение размера всей фигуры)
+		IncorrectPoints2 = 0;
+		CurrentSplinePoint = 0;
+		PointsPlaced = 0;
+		ProceduralLiquidMesh->Spline->ClearSplinePoints(true);
+		TimeLast = TimerCurrent;
+
+		UE_LOG(LogTemp, Warning, TEXT("Stopping actions"));
 	}
-
-	for (auto& elem : IsSplinePointOccupied) {
-		elem.Value = false;
-	}
-
-	for (auto& elem : VerticiesToSelectCenterDistMap) {
-		elem.Value = 0;
-	}
-	
-	IncorrectPoints2 = 0;
-	CurrentSplinePoint = 0;
-	ProceduralLiquidMesh->Spline->ClearSplinePoints(true);
-
-	UE_LOG(LogTemp, Warning, TEXT("Stopping actions"));
 }
 
 void AMyPlayerController::DrawSelectingArea()
@@ -270,14 +292,14 @@ void AMyPlayerController::DrawSpline(FVector hitResult)
 			5.f,
 			2
 		);
-		
+		PointsPlaced++;
 		CurrentSplinePoint++;
 	}
 	else 
 	{
 		if (FVector::Distance(SplinePointsMap[CurrentSplinePoint], hitResult) > DistanceBetweenPoints && CurrentSplinePoint < ProceduralLiquidMesh->GetVerticiesArrayLength()) {
 			CurrentSplinePoint++;
-			
+			PointsPlaced++;
 			SplinePointsMap.Emplace(CurrentSplinePoint, hitResult);
 			ProceduralLiquidMesh->Spline->AddSplinePoint(FVector(0, hitResult.Y, hitResult.Z), ESplineCoordinateSpace::World, true);
 	
@@ -342,43 +364,30 @@ void AMyPlayerController::CorrectVertexPos()
 	
 }
 
+void AMyPlayerController::DecreaseTimerValue()
+{
+	if (TimerDecrease > 0.1) {
+		TimerDecrease -= 0.03f;
+		TimerCurrent = TimerInit * TimerDecrease;
+	}
+}
+
 void AMyPlayerController::GenerateTaskShape()
 {
-	ProcMeshBase->GenerateFigure();
+	ProcMeshBase->GenerateFigure(isHard);
 	OnGenerateTaskShape();
-	
-	DrawDebugSphere(
-		GetWorld(),
-		ProcMeshBase->Spline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World),
-		4,
-		3,
-		FColor::Red,
-		false,
-		100.f,
-		0
-	);
-
-	DrawDebugSphere(
-		GetWorld(),
-		ProcMeshBase->Spline->GetLocationAtSplinePoint(1, ESplineCoordinateSpace::World),
-		4,
-		3,
-		FColor::Red,
-		false,
-		100.f,
-		0
-	);
-
-	DrawDebugSphere(
-		GetWorld(),
-		ProcMeshBase->Spline->GetLocationAtSplinePoint(2, ESplineCoordinateSpace::World),
-		4,
-		3,
-		FColor::Red,
-		false,
-		100.f,
-		0
-	);
+	//for (int i = 0; i <= ProcMeshBase->SplinePointsIndex; i++) {
+	//	DrawDebugSphere(
+	//		GetWorld(),
+	//		ProcMeshBase->Spline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World),
+	//		4,
+	//		3,
+	//		FColor::Red,
+	//		false,
+	//		100.f,
+	//		0
+	//	);
+	//}
 }
 
 float AMyPlayerController::DecreaseShiftByDistance(float distance)
@@ -401,10 +410,10 @@ TArray<FVector> AMyPlayerController::GetTaskShapePoints()
 	TArray<FVector>Points;
 	for (int i = 0; i <= ProcMeshBase->SplinePointsIndex; i++)
 	{
-		Points.Add(ProcMeshBase->Spline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World));
+		Points.Add(ProcMeshBase->Spline2->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World));
 		DrawDebugSphere(
 			GetWorld(),
-			ProcMeshBase->Spline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World),
+			ProcMeshBase->Spline2->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World),
 			7,
 			6,
 			FColor::Magenta,
@@ -419,7 +428,48 @@ TArray<FVector> AMyPlayerController::GetTaskShapePoints()
 	return Points;
 }
 
+TArray<FVector> AMyPlayerController::GetSecondSplinePoints()
+{
+	TArray<FVector>Points;
+	for (int i = 0; i <= ProcMeshBase->SplinePointsIndex; i++)
+	{
+		Points.Add(ProcMeshBase->SecondSpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World));
+		//DrawDebugSphere(
+		//	GetWorld(),
+		//	ProcMeshBase->Spline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World),
+		//	7,
+		//	6,
+		//	FColor::Magenta,
+		//	false,
+		//	30.f,
+		//	0
+		//);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("SecondSpline's Points array NUM index is: %i"), Points.Num());
+
+	return Points;
+}
+
 int AMyPlayerController::GetSplinePointsLastIndex()
 {
 	return ProcMeshBase->SplinePointsIndex;
+}
+
+void AMyPlayerController::DeleteSecondSpline()
+{
+	ProcMeshBase->SecondSpline->ClearSplinePoints(true);
+}
+
+bool AMyPlayerController::isGameStartedFunc() {
+	return isGameStarted;
+}
+
+FVector AMyPlayerController::PassCoordsToCode(float Y, float Z) {
+	return FVector(0, Y, Z);
+}
+
+float AMyPlayerController::GetTimeInPercent() 
+{
+	UE_LOG(LogTemp, Warning, TEXT("Timer percent: %f"), TimeLast / TimerCurrent * 100);
+	return TimeLast / TimerCurrent;
 }

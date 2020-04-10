@@ -17,30 +17,59 @@ class LIQUID_API UProceduralMeshesBase : public UActorComponent
 	GENERATED_BODY()
 
 private:
-	void AddTriangle(FVector V1, FVector V2, FVector V3);
-	void GenerateTriangle(FVector Center);
-	void FigureVisualPresentation();
+	
+	// Light-mode
 
-	APlayerController* Controller;
+	void GenerateTriangle(FVector V1, FVector V2, FVector V3);
+	void GenerateTriangle();
+	void GenerateQuadrangle();
+	void GenerateRhombus();
+	void GeneratePentagon();
+	void GenerateCircle();
+	
+	// Hard-mode
 
+	void GenerateHexagon();
+	void GenerateFourPointedStar();
+	void GenerateFivePointedStar();
+	void GenerateSixPointedStar();
 
+	// Service
+
+	void CopyToSecondSpline();
 
 	FVector AddPoint(float Y, float Z);
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+
+	float PointOffset();
 
 public:	
 	// Sets default values for this component's properties
 	UProceduralMeshesBase();
 
 	int32 SplinePointsIndex = 0;
+	int32 CurrentDifficulty;
 	
-	void GenerateFigure();
+	/**
+	 * Generates random figure
+	 * @param	isHard: true - hard | false - light
+	 */
+	void GenerateFigure(bool isHard);
+
+	/**
+	 * Deletes generateg figure
+	 */
+	void DeleteFigure();
 	
-	USplineComponent* Spline;
+	/**
+	 * Generates specific figure for debug
+	 * @param	FigureName: 1 - Triangle,  2 - Quadrangle, 3 - Pentagon, 4 - Circle, 5 - Hexagon, 6 - FourStar, 7 - FiveStar, 8 - SixStar, 9 - Rhombus
+	 */
+	void GenerateFigure(int32 FigureNum);
+	
+	USplineComponent* Spline2;
 
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	/**
+	* SecondSpline is used for figure disappear animation
+	*/
+	USplineComponent* SecondSpline;
 };
