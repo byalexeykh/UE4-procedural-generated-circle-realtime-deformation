@@ -98,7 +98,7 @@ private:
 	float PointsPlaced = 0;
 	float SelectRadius = 10;
 	float DistanceBetweenPoints = 30;
-	float MaxDeviationFromTaskShape = 15;
+	float MaxDeviationFromTaskShape = 50;
 	const float TimerInit = 8;
 
 	float TimeLast;
@@ -133,8 +133,6 @@ private:
 	FHitResult HitResult;
 
 	FString ActorName, RequiredName = "Actor_1";
-
-	FCollisionQueryParams CollisionQueryParams;
 
 	AActor* DebugActor;
 
