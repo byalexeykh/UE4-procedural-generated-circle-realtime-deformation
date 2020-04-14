@@ -23,10 +23,13 @@ private:
 
 	int32 TrisIndex;
 	int32 vertexIndex;
+	int32 Resolution = 40;
 
 	UProceduralMeshComponent* mesh;
 
 	USceneComponent* Root;
+
+	float Radius = 60;
 
 	void PostLoad() override;
 	void PostActorCreated() override;
@@ -48,8 +51,12 @@ public:
 	void GenerateMesh();
 	void UpdateMesh();
 	void AddPointToSpline(FVector NewPointLoc);
-
+	
+	float GetRadius();
+	
 	bool Error = false;
+
+	int32 GetResolution();
 	
 	FVector MeshCenter = FVector(0, 0, 0);
 	

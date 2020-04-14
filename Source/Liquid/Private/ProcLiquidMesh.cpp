@@ -36,9 +36,6 @@ void AProcLiquidMesh::PostActorCreated()
 }
 
 
-
-
-
 void AProcLiquidMesh::AddTriangle(int32 V1, int32 V2, int32 V3)
 {
 	Triangles.Add(V1);
@@ -77,7 +74,7 @@ void AProcLiquidMesh::AddTangent(FProcMeshTangent tangent)
 	Tangents.Add(tangent);
 }
 
-void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
+void AProcLiquidMesh::AddCircle(FVector Center, int32 kekRadius, int32 kekResolution)
 {
 	float angleBetweenPointsRads = (360 / Resolution) * PI / 180;
 	//UE_LOG(LogTemp, Warning, TEXT("Angle between point in rads is = %f"), angleBetweenPointsRads);
@@ -85,12 +82,13 @@ void AProcLiquidMesh::AddCircle(FVector Center, int32 Radius, int32 Resolution)
 	FVector2D UVCenter = FVector2D(0, 0);
 	vertexIndex = 0; // resetting VertexIndex
 	Verticies.Add(Center); // Adding Center first (Verticies[vertexIndex] = Verticies[0] = Center)
+	VerticiesDir.Add(Center);
 	UVs.Add(UVCenter);
 
-	for (int i = 0; i < Resolution; i++) 
+	for (int i = 0; i < kekResolution; i++)
 	{
-		float Y = Radius * cos(currentAngleRads);
-		float Z = Radius * sin(currentAngleRads);
+		float Y = kekRadius * cos(currentAngleRads);
+		float Z = kekRadius * sin(currentAngleRads);
 		AddVertex(Y, Z);
 		//UE_LOG(LogTemp, Warning, TEXT("Added vertex of num %f with coords: Y: %f, Z: %f"), i, Y, Z);
 		//UE_LOG(LogTemp, Warning, TEXT("using currentAngleRads = %f"), currentAngleRads);
@@ -137,7 +135,7 @@ void AProcLiquidMesh::GenerateMesh()
 	Triangles.Reset();
 	Colors.Reset();
 
-	AddCircle(MeshCenter, 100, 30);
+	AddCircle(MeshCenter, Radius, Resolution);
 
 	VerticiesDefaultPos.Append(Verticies); // Backup'ing verticies coords
 
@@ -155,6 +153,16 @@ void AProcLiquidMesh::UpdateMesh()
 void AProcLiquidMesh::AddPointToSpline(FVector NewPointLoc)
 {
 	Spline->AddSplineLocalPoint(NewPointLoc);
+}
+
+float AProcLiquidMesh::GetRadius()
+{
+	return Radius;
+}
+
+int32 AProcLiquidMesh::GetResolution()
+{
+	return Resolution;
 }
 
 int32 AProcLiquidMesh::GetVerticiesArrayLength()

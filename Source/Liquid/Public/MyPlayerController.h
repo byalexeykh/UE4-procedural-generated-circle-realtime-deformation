@@ -85,7 +85,8 @@ private:
 	void MoveX(float AxisValue);
 	void MoveY(float AxisValue);
 	
-	void CorrectVertexPos();
+	void ReturnVerticies(float MyDeltaTime);
+	void MoveVerticies(FVector TouchLoc, float MyDeltaTime);
 	void DecreaseTimerValue();
 	
 	int32 CurrentSplinePoint = 0;
@@ -104,8 +105,6 @@ private:
 	float TimeLast;
 	float TimerDecrease;
 	float TimerCurrent;
-	float Distance;
-	float SmallestDistance;
 	float DistanceBetweenVerticies;
 	float DecreaseShiftByDistance(float Distance);
 
@@ -126,7 +125,7 @@ private:
 
 	TArray<FVector> SplinePoints;
 
-	FVector MouseWorldPosition, MouseWorldDirection;
+	FVector MouseWorldPosition, MouseWorldDirection, TouchPos = FVector::ZeroVector;
 
 	FVector ConvertTo2D(FVector vectorToConvert);
 
