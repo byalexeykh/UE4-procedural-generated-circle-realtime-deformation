@@ -2,13 +2,13 @@
 
 using UnrealBuildTool;
 
-public class Liquid : ModuleRules
+public class Liquid2 : ModuleRules
 {
-	public Liquid(ReadOnlyTargetRules Target) : base(Target)
+	public Liquid2(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent", "UMG", "Slate", "SlateCore"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "ProceduralMeshComponent" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

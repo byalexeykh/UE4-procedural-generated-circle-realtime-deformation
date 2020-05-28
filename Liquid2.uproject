@@ -5,13 +5,11 @@
 	"Description": "",
 	"Modules": [
 		{
-			"Name": "Liquid",
+			"Name": "Liquid2",
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
-				"Engine",
-				"ProceduralMeshComponent",
-				"UMG"
+				"Engine"
 			]
 		}
 	]

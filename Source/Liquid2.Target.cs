@@ -3,12 +3,12 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class LiquidTarget : TargetRules
+public class Liquid2Target : TargetRules
 {
-	public LiquidTarget( TargetInfo Target) : base(Target)
+	public Liquid2Target( TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.AddRange( new string[] { "Liquid" } );
+		ExtraModuleNames.AddRange( new string[] { "Liquid2" } );
 	}
 }

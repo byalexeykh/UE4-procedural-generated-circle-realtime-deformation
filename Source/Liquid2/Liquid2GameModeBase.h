@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "LiquidGameModeBase.generated.h"
+#include "Liquid2GameModeBase.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class LIQUID_API ALiquidGameModeBase : public AGameModeBase
+class LIQUID2_API ALiquid2GameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
